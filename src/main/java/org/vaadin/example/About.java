@@ -12,6 +12,7 @@ public class About extends Div {
 
     public About() {
         setText("A server side Tetris game, WTF!? ");
+
         final Anchor gitHubPage = new Anchor("https://github.com/mstahv/VaadinTetris", "GitHub page");
         gitHubPage.setTarget("_blank");
         add(gitHubPage);
