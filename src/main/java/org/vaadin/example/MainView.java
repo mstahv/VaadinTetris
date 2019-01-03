@@ -27,7 +27,7 @@ import java.util.Arrays;
 @Push(transport = Transport.WEBSOCKET)
 @Route
 @PWA(name = "Vaadin Tetris", shortName = "Tetris", themeColor = "lightblue")
-@Viewport("width=device-width, minimum-scale=1, initial-scale=1, user-scalable=no, minimal-ui")
+@Viewport("width=device-width, minimum-scale=1, initial-scale=1, user-scalable=no")
 @HtmlImport("frontend://custom-style.html")
 public class MainView extends VerticalLayout {
 
