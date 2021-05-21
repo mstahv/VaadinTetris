@@ -1,35 +1,32 @@
 package org.vaadin.example;
 
-import com.vaadin.flow.component.AttachEvent;
-import com.vaadin.flow.component.ClientCallable;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.page.Push;
-import com.vaadin.flow.component.page.Viewport;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.shared.ui.Transport;
 import org.vaadin.firitin.layouts.BorderLayout;
-import org.vaadin.marcus.shortcut.Shortcut;
 import org.vaadin.pekkam.Canvas;
 
 import java.util.Arrays;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 // The most efficient transport system
 @Push(transport = Transport.WEBSOCKET)
 @Route
-@PWA(name = "Vaadin Tetris", shortName = "Tetris", themeColor = "lightblue")
-@Viewport("width=device-width, minimum-scale=1, initial-scale=1, user-scalable=no")
-@HtmlImport("frontend://custom-style.html")
-public class MainView extends VerticalLayout {
+//@PWA(name = "Vaadin Tetris", shortName = "Tetris", themeColor = "lightblue")
+//@Viewport("width=device-width, minimum-scale=1, initial-scale=1, user-scalable=no")
+public class MainView extends HorizontalLayout {
 
     private static final int PAUSE_TIME_MS = 500;
 
@@ -44,6 +41,8 @@ public class MainView extends VerticalLayout {
 
     // Playfield background color
     private static final String PLAYFIELD_COLOR = "#000";
+    private final SystemInformationService sis;
+    private final ScheduledExecutorService executorService;
 
     // Tile size in pixels
     private int tileSize = 30;
@@ -53,9 +52,12 @@ public class MainView extends VerticalLayout {
     private Game game;
 
     private Span scoreLabel;
+    private ScheduledFuture<?> gameLoop;
 
-    public MainView() {
-        add(new About());
+    public MainView(SystemInformationService sis, ScheduledExecutorService executorService) {
+        this.executorService = executorService;
+        this.sis = sis;
+        sis.register();
 
         // Button for moving left
         final Button leftBtn = new Button(VaadinIcon.ARROW_LEFT.create());
@@ -63,7 +65,7 @@ public class MainView extends VerticalLayout {
             game.moveLeft();
             drawGameState();
         });
-        Shortcut.add(this, Key.ARROW_LEFT, leftBtn::click);
+        leftBtn.addClickShortcut(Key.ARROW_LEFT);
 
         // Button for moving right
         final Button rightBtn = new Button(VaadinIcon.ARROW_RIGHT.create());
@@ -71,7 +73,7 @@ public class MainView extends VerticalLayout {
             game.moveRight();
             drawGameState();
         });
-        Shortcut.add(this, Key.ARROW_RIGHT, rightBtn::click);
+        rightBtn.addClickShortcut(Key.ARROW_RIGHT);
 
         // Button for rotating clockwise
         final Button rotateCWBtn = new Button(VaadinIcon.ROTATE_RIGHT.create());
@@ -79,7 +81,7 @@ public class MainView extends VerticalLayout {
             game.rotateCW();
             drawGameState();
         });
-        Shortcut.add(this, Key.ARROW_DOWN, rotateCWBtn::click);
+        rotateCWBtn.addClickShortcut(Key.ARROW_DOWN);
 
         // Button for rotating counter clockwise
         final Button rotateCCWBtn = new Button(VaadinIcon.ARROW_UP.create());
@@ -87,7 +89,7 @@ public class MainView extends VerticalLayout {
             game.rotateCCW();
             drawGameState();
         });
-        Shortcut.add(this, Key.ARROW_UP, rotateCCWBtn::click);
+        rotateCCWBtn.addClickShortcut(Key.ARROW_UP);
 
         // Button for dropping the piece
         final Button dropBtn = new Button(VaadinIcon.ARROW_DOWN.create());
@@ -96,7 +98,7 @@ public class MainView extends VerticalLayout {
             game.drop();
             drawGameState();
         });
-        Shortcut.add(this, Key.of("d"), dropBtn::click);
+        dropBtn.addClickShortcut(Key.KEY_D);
 
         // Button for restarting the game
         final Button restartBtn = new Button(VaadinIcon.PLAY.create());
@@ -105,9 +107,11 @@ public class MainView extends VerticalLayout {
             if (running) {
                 game = new Game(10, 20);
                 startGameThread();
+                restartBtn.setText("Stop");
                 restartBtn.setIcon(VaadinIcon.STOP.create());
                 dropBtn.focus();
             } else {
+                restartBtn.setText("Start");
                 restartBtn.setIcon(VaadinIcon.PLAY.create());
                 gameOver();
             }
@@ -119,10 +123,8 @@ public class MainView extends VerticalLayout {
 
         // Label for score
         scoreLabel = new Span("Score: 0");
-        add(scoreLabel);
 
         styleControlButtons(restartBtn, leftBtn, rightBtn, rotateCCWBtn, rotateCWBtn, dropBtn);
-        rotateCWBtn.addClassName("dominant-control");
         restartBtn.addThemeVariants(ButtonVariant.LUMO_ERROR);
 
         final BorderLayout cursorsPanel = new BorderLayout();
@@ -137,31 +139,8 @@ public class MainView extends VerticalLayout {
         controlsPanel.setJustifyContentMode(JustifyContentMode.BETWEEN);
         controlsPanel.setWidth(canvas.getWidth());
 
-        add(controlsPanel);
-
-        setAlignItems(Alignment.CENTER);
-        getStyle().set("overflow", "hidden");
-    }
-
-    @Override
-    public void onAttach(AttachEvent event) {
-        UI.getCurrent().getPage().executeJavaScript(
-                        "const viewPortHeight = window.innerHeight;" +
-                        "const aboutTextHeight = document.querySelectorAll('div')[1].offsetHeight;" +
-                        "const scoreLabelHeight = document.querySelector('span').offsetHeight;" +
-                        "const controlsPanelHeight = document.querySelector('vaadin-horizontal-layout').offsetHeight;" +
-                        "const befittingCanvasHeight = viewPortHeight - aboutTextHeight - scoreLabelHeight - controlsPanelHeight - 60;" +
-                        "$0.$server.updateCanvasHeight(befittingCanvasHeight);", this);
-    }
-
-    @ClientCallable
-    public void updateCanvasHeight(int befittingCanvasHeight) {
-        int currentCanvasHeight = tileSize * PLAYFIELD_H;
-        double scalingFactor = (double) (befittingCanvasHeight) / currentCanvasHeight;
-        tileSize *= scalingFactor;
-        remove(canvas);
-        canvas = new Canvas(tileSize * PLAYFIELD_W, tileSize * PLAYFIELD_H);
-        addComponentAtIndex(1, canvas);
+        // Build right column for the layout
+        add(new VerticalLayout(new About(), scoreLabel, controlsPanel, new ServerDetails(sis, executorService)));
     }
 
     private void styleControlButtons(Button... buttons) {
@@ -170,34 +149,30 @@ public class MainView extends VerticalLayout {
 
     /**
      * Start the game thread that updates the game periodically.
-     *
      */
     protected synchronized void startGameThread() {
         UI ui = UI.getCurrent();
-        Thread t = new Thread(() -> {
-
+        this.gameLoop = executorService.scheduleWithFixedDelay(() -> {
             // Continue until stopped or game is over
-            while (running && !game.isOver()) {
-
-                // Draw the state
-                ui.access(this::drawGameState);
-
-                // Pause for a while
-                try {
-                    Thread.sleep(PAUSE_TIME_MS);
-                } catch (InterruptedException ignored) {
-                }
-
+            if (running && !game.isOver()) {
                 // Step the game forward and update score
                 game.step();
-                ui.access(this::updateScore);
-
+                ui.access(this::drawAndUpdateScore);
+            } else {
+                // Notify user that game is over
+                ui.access(this::notifyGameOver);
+                gameLoop.cancel(true);
+                gameLoop = null;
             }
+       }, PAUSE_TIME_MS, PAUSE_TIME_MS, TimeUnit.MILLISECONDS);
+    }
 
-            // Notify user that game is over
-            ui.access(this::notifyGameOver);
-        });
-        t.start();
+    /**
+     * Update the score display.
+     */
+    protected synchronized void drawAndUpdateScore() {
+        drawGameState();
+        updateScore();
     }
 
     /**
@@ -249,5 +224,14 @@ public class MainView extends VerticalLayout {
 
             }
         }
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        sis.deRegister();
+        if(gameLoop != null) {
+            gameLoop.cancel(true);
+        }
+        super.onDetach(detachEvent);
     }
 }

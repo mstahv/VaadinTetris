@@ -1,0 +1,12 @@
+[Unit]
+Description=Tetris Vaadin game
+After=syslog.target
+
+[Service]
+User=root
+Environment=SPRING_PROFILES_ACTIVE=hetzner
+Environment=JAVA_OPTS="-Xms512m -Xmx1536m"
+ExecStart=/root/tetris.jar SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
