@@ -21,19 +21,31 @@ public class SystemInformationService {
     private int numberOfPlayers = 0;
     MemoryUsage heapMemoryUsage;
     MemoryUsage startHeapMemoryUsage;
+    int startHeapUsers;
+    int lastSessionSizeGuestimate;
+    int lastSessionSizeGuestimateUsers;
+
     ScheduledFuture<?> scheduledFuture;
 
     public SystemInformationService(ScheduledExecutorService executorService) {
         memoryMXBean = ManagementFactory.getMemoryMXBean();
         platformMXBean = ManagementFactory.getPlatformMXBean(
                 OperatingSystemMXBean.class);
-        executorService.schedule(() -> {
-            memoryMXBean.gc();
-            startHeapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
-        }, 3, TimeUnit.SECONDS);
         scheduledFuture = executorService.scheduleAtFixedRate(() -> {
             memoryMXBean.gc();
             heapMemoryUsage = heapMemoryUsage = memoryMXBean.getHeapMemoryUsage();
+            if(startHeapMemoryUsage == null && numberOfPlayers > 5) {
+                startHeapMemoryUsage = heapMemoryUsage;
+                startHeapUsers = numberOfPlayers;
+            }
+            if(numberOfPlayers > 10 && numberOfPlayers > lastSessionSizeGuestimateUsers) {
+                lastSessionSizeGuestimateUsers = numberOfPlayers;
+                // (a + xb = total1) || * -1
+                // (a + yb = total2)
+                //-xb + yb = total2 - total1
+                // b = (total2 -total1)/(y-x)
+                lastSessionSizeGuestimate = (int) ((heapMemoryUsage.getUsed() - startHeapMemoryUsage.getUsed())/(numberOfPlayers - startHeapUsers));
+            }
         }, 4, 20, TimeUnit.SECONDS);
     }
 
@@ -65,4 +77,9 @@ public class SystemInformationService {
     public MemoryUsage getStartHeapMemoryUsage() {
         return startHeapMemoryUsage;
     }
+
+    public int getLastSessionSizeGuestimate() {
+        return lastSessionSizeGuestimate;
+    }
+
 }

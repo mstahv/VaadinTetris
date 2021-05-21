@@ -53,13 +53,13 @@ public class ServerDetails extends Div {
         cpu.setText(String.format("CPU usage: %,.2f", sis.getSystemLoad()));
 
         // this estimation is twice too bad in the beginning and may change due to JVM optimisations, thus report only after n users are in
-        long estimatedMemoryPerUser = (usage.getUsed() - sis.getStartHeapMemoryUsage().getUsed()) / sis.getNumberOfPlayers();
-        long estimatedMax = (usage.getMax() - sis.getStartHeapMemoryUsage().getUsed())/estimatedMemoryPerUser;
-        String max = "/" + estimatedMax;
-        if(sis.getNumberOfPlayers() < 5) {
+        String max;
+        if(sis.getLastSessionSizeGuestimate() > 0) {
+            max = "" + sis.getNumberOfPlayers() + (usage.getMax() - usage.getUsed())/sis.getLastSessionSizeGuestimate();
+        } else {
             max = "unknown (more players needed for an estimate)";
         }
-        players.setText("Active players on this node/ estimated max:" + sis.getNumberOfPlayers() + max + ", memory per player " + formatSize(estimatedMemoryPerUser));
+        players.setText("Active players on this node/ estimated max:" + sis.getNumberOfPlayers() + "/" + max + ", memory per player " + formatSize(sis.getLastSessionSizeGuestimate()));
     }
 
     public static String formatSize(long v) {
