@@ -55,11 +55,11 @@ public class ServerDetails extends Div {
         // this estimation is twice too bad in the beginning and may change due to JVM optimisations, thus report only after n users are in
         String max;
         if(sis.getLastSessionSizeGuestimate() > 0) {
-            max = "" + sis.getNumberOfPlayers() + (usage.getMax() - usage.getUsed())/sis.getLastSessionSizeGuestimate();
+            max = String.valueOf(sis.getNumberOfPlayers() + (usage.getMax() - usage.getUsed())/sis.getLastSessionSizeGuestimate());
         } else {
             max = "unknown (more players needed for an estimate)";
         }
-        players.setText("Active players on this node/ estimated max:" + sis.getNumberOfPlayers() + "/" + max + ", memory per player " + formatSize(sis.getLastSessionSizeGuestimate()));
+        players.setText("Active players on this node/ estimated max: " + sis.getNumberOfPlayers() + "/" + max + ", estimated memory usage per player " + formatSize(sis.getLastSessionSizeGuestimate()));
     }
 
     public static String formatSize(long v) {
