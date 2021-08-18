@@ -27,7 +27,7 @@ public class ServerDetails extends Div {
         this.sis = sis;
         scheduledFuture = es.scheduleWithFixedDelay(this::updateDetails, 5, 5, TimeUnit.SECONDS);
         add(new H3("Server details"));
-        add(new Paragraph("As a demo purpose, this is on purpose deployed on a moderate Amazon EC2 instance. Below some usage stats. TODO refine calculations"));
+        add(new Paragraph("For demo purposes, this is on deployed on a modest Amazon EC2 instance. Below some usage stats."));
         add(memory,cpu, players);
 
         Paragraph latencyReport = new Paragraph();
@@ -69,11 +69,10 @@ public class ServerDetails extends Div {
     }
 
     private void updateDetails() {
-        getUI().ifPresentOrElse(ui -> ui.access(()-> {
-            doUpdateDetails();
-        }), () -> {
-            scheduledFuture.cancel(true);
-        });
+        getUI().ifPresentOrElse(
+                ui -> ui.access(()-> doUpdateDetails()),
+                () -> scheduledFuture.cancel(true)
+        );
     }
 
 }
