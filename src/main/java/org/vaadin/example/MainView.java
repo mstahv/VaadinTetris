@@ -22,7 +22,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 // The most efficient transport system
-@Push(transport = Transport.WEBSOCKET)
 @Route
 //@PWA(name = "Vaadin Tetris", shortName = "Tetris", themeColor = "lightblue")
 //@Viewport("width=device-width, minimum-scale=1, initial-scale=1, user-scalable=no")
@@ -30,22 +29,20 @@ public class MainView extends HorizontalLayout {
 
     private static final int PAUSE_TIME_MS = 500;
 
-    private static final long serialVersionUID = -152735180021558969L;
-
-
     // Playfield width in tiles
     private static final int PLAYFIELD_W = 10;
 
     // Playfield height in tiles
     private static final int PLAYFIELD_H = 20;
 
+    // Tile size in pixels
+    private int tileSize = 30;
+
     // Playfield background color
     private static final String PLAYFIELD_COLOR = "#000";
     private final SystemInformationService sis;
     private final ScheduledExecutorService executorService;
 
-    // Tile size in pixels
-    private int tileSize = 30;
 
     private Canvas canvas;
     private boolean running;
