@@ -1,11 +1,9 @@
 package org.vaadin.example;
 
 import com.sun.management.OperatingSystemMXBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PreDestroy;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
