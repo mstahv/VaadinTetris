@@ -19,6 +19,13 @@
         <dependencies>
             <dependency>
                 <groupId>com.vaadin</groupId>
+                <artifactId>flow-bom</artifactId>
+                <version>25.1-SNAPSHOT</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.vaadin</groupId>
                 <artifactId>vaadin-bom</artifactId>
                 <version>25.0.0</version>
                 <type>pom</type>
@@ -35,11 +42,23 @@
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.vaadin</groupId>
+                    <artifactId>flow-push</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-dev</artifactId>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.vaadin</groupId>
+                    <artifactId>flow-push</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -74,6 +93,10 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <optimizeBundle>true</optimizeBundle>
+                    <forceProductionBuild>true</forceProductionBuild>
+                </configuration>
             </plugin>
         </plugins>
     </build>

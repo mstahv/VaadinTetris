@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 @SpringBootApplication
-@Push(transport = Transport.WEBSOCKET)
+@Push(transport = Transport.SSE)
 @StyleSheet(Lumo.STYLESHEET)
 public class Application implements AppShellConfigurator {
 
