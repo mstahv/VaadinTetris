@@ -46,10 +46,12 @@ public class ServerDetails extends Div {
 
     private void doUpdateDetails() {
         MemoryUsage usage = sis.getHeapMemoryUsage();
-        memory.setText(String.format("Heap used/available: %s/%s ",
-                formatSize(usage.getUsed()),
-                formatSize(usage.getMax()))
-        );
+        if(memory != null) {
+            memory.setText(String.format("Heap used/available: %s/%s ",
+                    formatSize(usage.getUsed()),
+                    formatSize(usage.getMax()))
+            );
+        }
         cpu.setText(String.format("CPU usage: %,.2f", sis.getSystemLoad()));
 
         // this estimation is twice too bad in the beginning and may change due to JVM optimisations, thus report only after n users are in
